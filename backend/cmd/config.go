@@ -11,11 +11,4 @@ type Config struct {
 
 	MongoURL string
 	RedisURL string
-
-	MongoServer     string
-	MongoDatabase   string
-	MongoCollection string
-	MongoSource     string
-	MongoUser       string
-	MongoPassword   string
 }

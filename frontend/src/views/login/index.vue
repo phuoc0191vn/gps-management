@@ -11,32 +11,17 @@
         <span class="svg-container">
           <svg-icon icon-class="user"/>
         </span>
-        <el-input
-          ref="email"
-          v-model="loginForm.email"
-          placeholder="Email"
-          name="email"
-          type="text"
-          tabindex="1"
-          auto-complete="on"
-        />
+        <el-input ref="email" v-model="loginForm.email" placeholder="Email" name="email" type="text" tabindex="1"
+                  auto-complete="on"/>
       </el-form-item>
 
       <el-form-item prop="password">
         <span class="svg-container">
           <svg-icon icon-class="password"/>
         </span>
-        <el-input
-          :key="passwordType"
-          ref="password"
-          v-model="loginForm.password"
-          :type="passwordType"
-          placeholder="Password"
-          name="password"
-          tabindex="2"
-          auto-complete="on"
-          @keyup.enter.native="handleLogin"
-        />
+        <el-input :key="passwordType" ref="password" v-model="loginForm.password" :type="passwordType"
+                  placeholder="Password" name="password" tabindex="2" auto-complete="on"
+                  @keyup.enter.native="handleLogin"/>
         <span class="show-pwd" @click="showPwd">
           <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'"/>
         </span>
@@ -51,12 +36,14 @@
 </template>
 
 <script>
-import { validUsername } from '@/utils/validate'
+import {validUsername} from '@/utils/validate'
 
 export default {
   name: 'Login',
   data() {
     const validateEmail = (rule, value, callback) => {
+      callback()
+      return
       if (!validUsername(value)) {
         callback(new Error('Please enter the correct email'))
       } else {
@@ -64,6 +51,8 @@ export default {
       }
     }
     const validatePassword = (rule, value, callback) => {
+      callback()
+      return
       if (value.length < 6) {
         callback(new Error('The password can not be less than 6 digits'))
       } else {
@@ -108,7 +97,6 @@ export default {
         if (valid) {
           this.loading = true
           this.$store.dispatch('user/login', this.loginForm).then(() => {
-            console.log('XXX this here')
             this.$router.push({path: '/'})
             this.loading = false
           }).catch(() => {

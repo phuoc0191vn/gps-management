@@ -24,6 +24,7 @@ func NewAPIv1(container *Container) http.Handler {
 	)
 
 	userRouter(v1)
+	accountRouter(v1)
 
 	return router
 }
@@ -50,7 +51,7 @@ func userRouter(parent *api.Router) {
 	router.POST("", userHandler.AddUser)
 }
 
-func accountHandler(parent *api.Router) {
+func accountRouter(parent *api.Router) {
 	accountHandler := api.AccountHandler{
 		AccountRepository: container.AccountRepository,
 	}

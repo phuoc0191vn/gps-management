@@ -86,15 +86,11 @@ func (container *Container) LoadProviders(config Config) error {
 
 	redisProvider := redis.NewRedisProviderFromURL(config.RedisURL)
 
-	//mongoProvider := mongo.NewMongoProvider(config.MongoServer, config.MongoUser, config.MongoPassword,
-	//	config.MongoDatabase, config.MongoCollection, config.MongoSource)
-
 	container.Provider = &Provider{
 		LoggerProvider: loggerProvider,
 		MongoProvider:  mongo.NewMongoProviderFromURL(config.MongoURL),
-		//MongoProvider: mongoProvider,
-		RedisProvider: redisProvider,
-		JWTService:    jwt.NewJwtService(config.JwtSecret),
+		RedisProvider:  redisProvider,
+		JWTService:     jwt.NewJwtService(config.JwtSecret),
 	}
 	return nil
 }
