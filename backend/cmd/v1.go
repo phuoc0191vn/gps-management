@@ -60,6 +60,7 @@ func accountRouter(parent *api.Router) {
 	router := parent.Group("/account")
 
 	router.GET("", accountHandler.All)
+	router.GET("/info", accountHandler.AccountInfo)
 	router.GET("/detail/:id", accountHandler.Detail)
 	router.GET("/reset/:id", accountHandler.Reset)
 

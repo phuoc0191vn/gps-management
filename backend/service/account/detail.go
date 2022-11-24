@@ -15,7 +15,7 @@ type DetailAccount struct {
 	Email       string    `bson:"email" json:"email"`
 	CreatedTime time.Time `bson:"createdTime" json:"createdTime"`
 	UpdatedTime time.Time `bson:"updatedTime" json:"updatedTime"`
-	Scopes      []string  `bson:"scopes" json:"scopes"`
+	Scope       string    `bson:"scope" json:"scope"`
 	DeviceIDs   []string  `bson:"deviceIDs" json:"deviceIDs"`
 	UserID      string    `bson:"userID" json:"userID"`
 	CreatedBy   string    `bson:"createdBy" json:"createdBy"`
@@ -45,7 +45,7 @@ func (h *DetailAccountHandler) Handle(id string) (DetailAccount, error) {
 		Email:       account.Email,
 		CreatedTime: account.CreatedTime,
 		UpdatedTime: account.UpdatedTime,
-		Scopes:      account.Scopes,
+		Scope:       account.Scope,
 		DeviceIDs:   account.DeviceIDs,
 		UserID:      account.UserID,
 		CreatedBy:   account.CreatedBy,

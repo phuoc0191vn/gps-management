@@ -38,6 +38,13 @@ export function deleteUser(id) {
   })
 }
 
+export function userInfo() {
+  return request({
+    url: '/account/info',
+    method: 'get',
+  })
+}
+
 export function userDetail(id) {
   return request({
     url: '/account/detail/' + id,

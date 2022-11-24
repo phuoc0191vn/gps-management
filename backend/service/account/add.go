@@ -21,7 +21,7 @@ type AddAccount struct {
 
 	Email     string   `bson:"email" json:"email" valid:"required,email"`
 	Password  string   `bson:"password" json:"password" valid:"required"`
-	Scopes    []string `bson:"scopes" json:"scopes"`
+	Scope     string   `bson:"scope" json:"scope"`
 	DeviceIDs []string `bson:"deviceIDs" json:"deviceIDs"`
 	CreatedBy string   `bson:"createdBy" json:"createdBy"`
 }
@@ -32,10 +32,6 @@ func (c *AddAccount) Valid() error {
 
 	if c.PhoneNumber != "" && !utilities.IsPhoneNumber(c.PhoneNumber) {
 		return fmt.Errorf("invalid phone number")
-	}
-
-	if len(c.Scopes) == 0 {
-		return fmt.Errorf("invalid scope")
 	}
 
 	_, err := govalidator.ValidateStruct(c)
@@ -76,7 +72,7 @@ func (h *AddAccountHandler) Handle(c *AddAccount) error {
 		ID:          bson.NewObjectId(),
 		Email:       c.Email,
 		Password:    string(password),
-		Scopes:      c.Scopes,
+		Scope:       c.Scope,
 		CreatedTime: utilities.TimeInUTC(time.Now()),
 		UpdatedTime: utilities.TimeInUTC(time.Now()),
 		UserID:      u.ID.Hex(),

@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
 	"ctigroupjsc.com/phuocnn/gps-management/model"
+
+	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
 	serviceAccount "ctigroupjsc.com/phuocnn/gps-management/service/account"
 	"github.com/julienschmidt/httprouter"
 )
@@ -18,6 +19,29 @@ type AccountHandler struct {
 }
 
 func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	if !IsScopeAllowed(r) {
+		data, err := h.AccountRepository.FindByEmail(Email(r))
+		if err != nil {
+			WriteJSON(w, http.StatusInternalServerError, ResponseBody{
+				Message: err.Error(),
+				Code:    http.StatusInternalServerError,
+			})
+			return
+		}
+
+		WriteJSON(w, http.StatusOK, ResponseBody{
+			Code: http.StatusOK,
+			Data: struct {
+				Total int
+				Data  interface{}
+			}{
+				Total: 1,
+				Data:  []model.Account{*data},
+			},
+		})
+		return
+	}
+
 	output, ok := GetQuery(r, DATATABLE_QUERY_OUTPUT)
 	if ok && output == DATATABLE_QUERY_OUTPUT_DATATABLE {
 		page := 1
@@ -55,10 +79,6 @@ func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httproute
 			return
 		}
 
-		for i := 0; i < len(data); i++ {
-			data[i].Scopes = model.ConvertScopes(data[i].Scopes)
-		}
-
 		WriteJSON(w, http.StatusOK, ResponseBody{
 			Code: http.StatusOK,
 			Data: struct {
@@ -89,6 +109,18 @@ func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httproute
 	})
 }
 
+func (h *AccountHandler) AccountInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	data, err := h.AccountRepository.FindByEmail(Email(r))
+	if err != nil {
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, ResponseBody{
+		Code: http.StatusOK,
+		Data: data,
+	})
+}
+
 func (h *AccountHandler) Detail(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	id := p.ByName("id")
 
@@ -113,6 +145,10 @@ func (h *AccountHandler) Detail(w http.ResponseWriter, r *http.Request, p httpro
 }
 
 func (h *AccountHandler) Add(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	if !IsScopeAllowed(r) {
+		return
+	}
+
 	cmd := new(serviceAccount.AddAccount)
 	if err := BindJSON(r, cmd); err != nil {
 		WriteJSON(w, http.StatusBadRequest, ResponseBody{
@@ -173,6 +209,10 @@ func (h *AccountHandler) Update(w http.ResponseWriter, r *http.Request, p httpro
 }
 
 func (h *AccountHandler) Delete(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	if !IsScopeAllowed(r) {
+		return
+	}
+
 	deleteAccountHandler := &serviceAccount.DeleteAccountHandler{
 		AccountRepository:     h.AccountRepository,
 		UserRepository:        h.UserRepository,
@@ -197,6 +237,10 @@ func (h *AccountHandler) Delete(w http.ResponseWriter, r *http.Request, p httpro
 
 // Reset func is delete all data, do not delete account
 func (h *AccountHandler) Reset(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	if !IsScopeAllowed(r) {
+		return
+	}
+
 	id := p.ByName("id")
 
 	err := h.ActivityLogRepository.RemoveByAccountID(id)
@@ -221,4 +265,11 @@ func (h *AccountHandler) Reset(w http.ResponseWriter, r *http.Request, p httprou
 		Message: "reset account successfully",
 		Code:    http.StatusOK,
 	})
+}
+
+func IsScopeAllowed(r *http.Request) bool {
+	if Scope(r) == model.ScopeUser {
+		return false
+	}
+	return true
 }

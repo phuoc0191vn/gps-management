@@ -55,7 +55,7 @@
           </el-row>
 
           <el-form-item>
-            <el-button v-if="!isUpdateForm" type="primary" @click="onSubmit">Create</el-button>
+            <el-button v-if="!isUpdateForm && scope !== 'user'" type="primary" @click="onSubmit">Create</el-button>
             <el-button v-if="isUpdateForm" type="primary" @click="onUpdate">Update</el-button>
             <el-button @click="onCancel">Cancel</el-button>
           </el-form-item>
@@ -66,23 +66,23 @@
     <el-row>
       <el-col>
         <el-table ref="datatable" table-layout="fixed"
-                  :data="tableData.filter(data => !search || data.name.toLowerCase().includes(search.toLowerCase()))"
+                  :data="tableData.filter(data => !search || data.email.toLowerCase().includes(search.toLowerCase()))"
                   style="width: 100%;">
           <el-table-column align="center" label="Index" type="index" width="70"></el-table-column>
           <el-table-column align="center" label="Email" prop="email"></el-table-column>
-          <el-table-column align="center" label="Scopes" prop="scopes"></el-table-column>
+          <el-table-column align="center" label="Scope" prop="scope"></el-table-column>
           <el-table-column align="center" label="Created By" prop="createdBy"></el-table-column>
           <el-table-column align="center" label="Created Time" prop="createdTime"></el-table-column>
           <el-table-column align="center" label="Updated Time" prop="updatedTime"></el-table-column>
           <el-table-column align="right" width="300">
-            <template v-slot:[slotHeader]="scope">
+            <template v-slot:[slotHeader]="tableScope">
               <el-input v-model="search" size="mini" placeholder="Type to search"/>
             </template>
-            <template v-slot="scope">
-              <el-button size="mini" type="info" @click="handleView(scope.$index, scope.row)">View</el-button>
-              <el-button size="mini" type="primary" @click="handleEdit(scope.$index, scope.row)">Edit</el-button>
-              <el-button size="mini" type="warning" @click="handleReset(scope.$index, scope.row)">Reset</el-button>
-              <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">Delete</el-button>
+            <template v-slot="tableScope">
+              <el-button size="mini" type="info" @click="handleView(tableScope.$index, tableScope.row)">View</el-button>
+              <el-button size="mini" type="primary" @click="handleEdit(tableScope.$index, tableScope.row)">Edit</el-button>
+              <el-button v-if="scope !== 'user'" size="mini" type="warning" @click="handleReset(tableScope.$index, tableScope.row)">Reset</el-button>
+              <el-button v-if="scope !== 'user'" size="mini" type="danger" @click="handleDelete(tableScope.$index, tableScope.row)">Delete</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -101,7 +101,7 @@
 </template>
 
 <script>
-import {addUser, datatable, deleteUser, resetUser, updateUser, userDetail} from "@/api/user";
+import {addUser, datatable, deleteUser, resetUser, updateUser, userDetail, userInfo} from "@/api/user";
 import SweetCode from '@/components/SweetCode/index'
 import {sanitizeObject} from '@/utils'
 
@@ -110,6 +110,7 @@ export default {
   components: {SweetCode},
   data() {
     return {
+      scope: '',
       slotHeader: 'header',
       isUpdateForm: false,
       userIDUpdate: '',
@@ -121,7 +122,6 @@ export default {
         email: '',
         password: '',
         scope: '',
-        scopes: [],
       },
       tableData: [],
       page: 1,
@@ -146,15 +146,6 @@ export default {
       this.getDatatable()
     },
     onSubmit() {
-      if (this.form.scope === 'root') {
-        this.form.scopes = ['root:*:*']
-      }
-      if (this.form.scope === 'admin') {
-        this.form.scopes = ['admin:*:*']
-      }
-      if (this.form.scope === 'user') {
-        this.form.scopes = ['user:*:*']
-      }
       addUser(this.form).then(() => {
         this.$message('add account successfully')
         this.clear()
@@ -168,7 +159,6 @@ export default {
 
     },
     onUpdate() {
-      this.form.scopes = []
       this.form.email = ''
       this.form.password = ''
 
@@ -202,6 +192,7 @@ export default {
         this.form.identityID = resp.data.identityID
         this.form.unit = resp.data.unit
         this.form.phoneNumber = resp.data.phoneNumber
+        this.form.scope = resp.data.scope
 
         this.userIDUpdate = resp.data.userID
       }).catch(e => {
@@ -209,7 +200,7 @@ export default {
       })
     },
     handleReset(index, row) {
-      if(confirm("Do you really want to reset account?")){
+      if (confirm("Do you really want to reset account?")) {
         resetUser(row.id).then(resp => {
           this.$message('reset account successfully')
         }).catch(e => {
@@ -218,7 +209,7 @@ export default {
       }
     },
     handleDelete(index, row) {
-      if(confirm("Do you really want to delete account?")){
+      if (confirm("Do you really want to delete account?")) {
         deleteUser(row.id).then(resp => {
           this.$message('delete account successfully')
           this.getDatatable()
@@ -243,6 +234,9 @@ export default {
   },
   created() {
     this.getDatatable()
+    userInfo().then(resp => {
+      this.scope = resp.data.scope
+    })
   },
 }
 </script>

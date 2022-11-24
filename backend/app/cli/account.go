@@ -7,7 +7,6 @@ import (
 	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 	serviceAccount "ctigroupjsc.com/phuocnn/gps-management/service/account"
-	serviceUser "ctigroupjsc.com/phuocnn/gps-management/service/user"
 )
 
 type AccountCommander struct {
@@ -30,8 +29,6 @@ func (h *AccountCommander) Handle() {
 }
 
 func (h *AccountCommander) Add() {
-	log.Println("-------------------- User Info --------------------")
-
 	log.Println("Name: ")
 	var name string
 	fmt.Scanln(&name)
@@ -48,31 +45,6 @@ func (h *AccountCommander) Add() {
 	var phoneNumber string
 	fmt.Scanln(&phoneNumber)
 
-	addUser := &serviceUser.AddUser{
-		Name:        name,
-		IdentityID:  identityID,
-		Unit:        unit,
-		PhoneNumber: phoneNumber,
-	}
-
-	addUserHandler := serviceUser.AddUserHandler{
-		UserRepository: h.UserRepository,
-	}
-
-	log.Println("Do you want to save user info? (y/n)")
-	var check string
-	fmt.Scanln(&check)
-	if check != "y" {
-		return
-	}
-
-	userID, err := addUserHandler.Handle(addUser)
-	if err != nil {
-		log.Fatalf("unable to create user info: %v", err)
-	}
-
-	log.Println("-------------------- Account Info --------------------")
-
 	log.Println("Email: ")
 	var email string
 	fmt.Scanln(&email)
@@ -85,34 +57,40 @@ func (h *AccountCommander) Add() {
 	var role int
 	fmt.Scanln(&role)
 
-	scopes := make([]string, 0)
-	scopes = model.DefaultUserScopes
+	scope := ""
+	scope = model.ScopeUser
 	if role == 1 {
-		scopes = model.DefaultRootScopes
+		scope = model.ScopeRoot
 	}
 	if role == 2 {
-		scopes = model.DefaultAdminScopes
+		scope = model.ScopeAdmin
 	}
 
 	addAccount := &serviceAccount.AddAccount{
-		Email:     email,
-		Password:  password,
-		Scopes:    scopes,
-		DeviceIDs: nil,
+		Name:        name,
+		IdentityID:  identityID,
+		Unit:        unit,
+		PhoneNumber: phoneNumber,
+		Email:       email,
+		Password:    password,
+		Scope:       scope,
+		DeviceIDs:   nil,
+		CreatedBy:   "system-admin",
 	}
 	addAccountHandler := serviceAccount.AddAccountHandler{
 		AccountRepository: h.AccountRepository,
+		UserRepository:    h.UserRepository,
 	}
 
+	var check string
 	log.Println("Do you want to save account info? (y/n)")
 	fmt.Scanln(&check)
 	if check != "y" {
 		return
 	}
 
-	err = addAccountHandler.Handle(addAccount)
+	err := addAccountHandler.Handle(addAccount)
 	if err != nil {
-		h.UserRepository.RemoveByID(userID)
 		log.Fatalf("unable to create account: %v", err)
 	}
 
