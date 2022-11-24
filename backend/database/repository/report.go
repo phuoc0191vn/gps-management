@@ -8,4 +8,5 @@ type ReportRepository interface {
 	Save(report model.Report) error
 
 	RemoveByID(id string) error
+	RemoveByAccountID(accountID string) error
 }

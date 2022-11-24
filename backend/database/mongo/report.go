@@ -5,7 +5,6 @@ import (
 
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 	"ctigroupjsc.com/phuocnn/gps-management/uitilities/providers/mongo"
-
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -26,7 +25,6 @@ func NewReportMongoRepository(provider *mongo.MongoProvider) *ReportMongoReposit
 		Key: []string{
 			"accountID",
 		},
-		Unique: true,
 	})
 
 	return repo
@@ -62,5 +60,14 @@ func (repo *ReportMongoRepository) RemoveByID(id string) error {
 	collection, close := repo.collection()
 	defer close()
 
-	return repo.provider.NewError(collection.RemoveId(id))
+	return repo.provider.NewError(collection.RemoveId(bson.ObjectIdHex(id)))
+}
+
+func (repo *ReportMongoRepository) RemoveByAccountID(accountID string) error {
+	collection, close := repo.collection()
+	defer close()
+
+	_, err := collection.RemoveAll(bson.M{"accountID": accountID})
+
+	return repo.provider.NewError(err)
 }

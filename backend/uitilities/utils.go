@@ -7,12 +7,19 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
+
+var regexPhoneNumber = regexp.MustCompile(`(?m)(84|0[0-9])+([0-9]{8})\b`)
+
+func IsPhoneNumber(str string) bool {
+	return regexPhoneNumber.MatchString(str)
+}
 
 func LoadEnvFromFile(config interface{}, configPrefix, envPath string) (err error) {
 	godotenv.Load(envPath)
@@ -51,6 +58,20 @@ func LoadEnvFromDir(config interface{}, configPrefix, dir string) error {
 func TimeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
 	fmt.Printf("%s took %s\n", name, elapsed)
+}
+
+func EqualStringArray(srcArr []string, destArr []string) bool {
+	if len(srcArr) != len(destArr) {
+		return false
+	}
+
+	for i := 0; i < len(srcArr); i++ {
+		if !StringInArray(srcArr[i], destArr) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func StringInArray(str string, arr []string) bool {

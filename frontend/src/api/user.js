@@ -8,11 +8,55 @@ export function login(data) {
   })
 }
 
+export function addUser(data) {
+  return request({
+    url: '/account',
+    method: 'post',
+    data
+  })
+}
+
+export function updateUser(id, data) {
+  return request({
+    url: '/account/' + id,
+    method: 'patch',
+    data
+  })
+}
+
+export function resetUser(id) {
+  return request({
+    url: '/account/reset/' + id,
+    method: 'get',
+  })
+}
+
+export function deleteUser(id) {
+  return request({
+    url: '/account/' + id,
+    method: 'delete',
+  })
+}
+
+export function userDetail(id) {
+  return request({
+    url: '/account/detail/' + id,
+    method: 'get',
+  })
+}
+
+export function datatable(page, limit) {
+  return request({
+    url: '/account?output=datatable&page=' + page + "&limit=" + limit,
+    method: 'get',
+  })
+}
+
 export function getInfo(token) {
   return request({
     url: '/vue-admin-template/user/info',
     method: 'get',
-    params: { token }
+    params: {token}
   })
 }
 

@@ -8,4 +8,5 @@ type ActivityLogRepository interface {
 	Save(log model.ActivityLog) error
 
 	RemoveByID(id string) error
+	RemoveByAccountID(accountID string) error
 }

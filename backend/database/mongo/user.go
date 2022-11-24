@@ -5,7 +5,6 @@ import (
 
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 	"ctigroupjsc.com/phuocnn/gps-management/uitilities/providers/mongo"
-
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -64,7 +63,7 @@ func (repo *UserMongoRepository) FindByID(id string) (*model.User, error) {
 	defer close()
 
 	var result model.User
-	err := collection.FindId(id).One(&result)
+	err := collection.FindId(bson.ObjectIdHex(id)).One(&result)
 	return &result, repo.provider.NewError(err)
 }
 
@@ -101,7 +100,7 @@ func (repo *UserMongoRepository) UpdateByID(id string, user model.User) error {
 	collection, close := repo.collection()
 	defer close()
 
-	err := collection.UpdateId(id, user)
+	err := collection.UpdateId(bson.ObjectIdHex(id), user)
 	return repo.provider.NewError(err)
 }
 
@@ -129,7 +128,7 @@ func (repo *UserMongoRepository) RemoveByID(id string) error {
 	collection, close := repo.collection()
 	defer close()
 
-	return repo.provider.NewError(collection.RemoveId(id))
+	return repo.provider.NewError(collection.RemoveId(bson.ObjectIdHex(id)))
 }
 
 func (repo *UserMongoRepository) RemoveByIdentifyID(identifyID string) error {

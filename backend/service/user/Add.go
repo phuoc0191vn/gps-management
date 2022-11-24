@@ -2,18 +2,14 @@ package user
 
 import (
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
-	"regexp"
 	"time"
 
 	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 	utilities "ctigroupjsc.com/phuocnn/gps-management/uitilities"
-
 	"github.com/asaskevich/govalidator"
+	"gopkg.in/mgo.v2/bson"
 )
-
-var regexPhoneNumber = regexp.MustCompile(`(?m)(84|0[0-9])+([0-9]{8})\b`)
 
 type AddUser struct {
 	Name        string `bson:"name" json:"name"`
@@ -23,7 +19,7 @@ type AddUser struct {
 }
 
 func (c *AddUser) Valid() error {
-	if c.PhoneNumber != "" && !regexPhoneNumber.MatchString(c.PhoneNumber) {
+	if c.PhoneNumber != "" && !utilities.IsPhoneNumber(c.PhoneNumber) {
 		return fmt.Errorf("invalid phone number")
 	}
 

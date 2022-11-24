@@ -1,6 +1,8 @@
 package mongo
 
 import (
+	"fmt"
+
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 	"ctigroupjsc.com/phuocnn/gps-management/uitilities/providers/mongo"
 	"gopkg.in/mgo.v2"
@@ -21,13 +23,6 @@ func NewAccountMongoRepository(provider *mongo.MongoProvider) *AccountMongoRepos
 
 	collection.EnsureIndex(mgo.Index{
 		Key: []string{
-			"username",
-		},
-		Unique: true,
-	})
-
-	collection.EnsureIndex(mgo.Index{
-		Key: []string{
 			"email",
 		},
 		Unique: true,
@@ -44,7 +39,6 @@ func NewAccountMongoRepository(provider *mongo.MongoProvider) *AccountMongoRepos
 		Key: []string{
 			"deviceID",
 		},
-		Unique: true,
 	})
 
 	return repo
@@ -66,6 +60,40 @@ func (repo *AccountMongoRepository) All() ([]model.Account, error) {
 	return result, repo.provider.NewError(err)
 }
 
+func (repo *AccountMongoRepository) Pagination(page int, limit int) (int, []model.Account, error) {
+	collection, close := repo.collection()
+	defer close()
+
+	query := collection.Find(nil)
+
+	total, err := query.Count()
+	if err != nil {
+		return 0, nil, repo.provider.NewError(err)
+	}
+
+	result := make([]model.Account, 0)
+
+	query = query.Limit(limit)
+	if page > 1 {
+		query = query.Skip(limit * (page - 1))
+	}
+
+	err = query.All(&result)
+	return total, result, repo.provider.NewError(err)
+}
+
+func (repo *AccountMongoRepository) FindByID(id string) (*model.Account, error) {
+	if !bson.IsObjectIdHex(id) {
+		return nil, fmt.Errorf("invalid id")
+	}
+	collection, close := repo.collection()
+	defer close()
+
+	var result model.Account
+	err := collection.FindId(bson.ObjectIdHex(id)).One(&result)
+	return &result, repo.provider.NewError(err)
+}
+
 func (repo *AccountMongoRepository) FindByEmail(email string) (*model.Account, error) {
 	collection, close := repo.collection()
 	defer close()
@@ -82,16 +110,33 @@ func (repo *AccountMongoRepository) Save(account model.Account) error {
 	return repo.provider.NewError(collection.Insert(account))
 }
 
-func (repo *AccountMongoRepository) UpdateByUsername(username string, account model.Account) error {
+func (repo *AccountMongoRepository) UpdateByEmail(email string, account model.Account) error {
 	collection, close := repo.collection()
 	defer close()
 
-	return repo.provider.NewError(collection.Update(bson.M{"username": username}, account))
+	return repo.provider.NewError(collection.Update(bson.M{"email": email}, account))
 }
 
-func (repo *AccountMongoRepository) RemoveByUsername(username string) error {
+func (repo *AccountMongoRepository) RemoveByID(id string) error {
+	if !bson.IsObjectIdHex(id) {
+		return fmt.Errorf("invalid id")
+	}
 	collection, close := repo.collection()
 	defer close()
 
-	return repo.provider.NewError(collection.Remove(bson.M{"username": username}))
+	return repo.provider.NewError(collection.RemoveId(bson.ObjectIdHex(id)))
+}
+
+func (repo *AccountMongoRepository) RemoveByEmail(email string) error {
+	collection, close := repo.collection()
+	defer close()
+
+	return repo.provider.NewError(collection.Remove(bson.M{"email": email}))
+}
+
+func (repo *AccountMongoRepository) RemoveByUserID(userID string) error {
+	collection, close := repo.collection()
+	defer close()
+
+	return repo.provider.NewError(collection.Remove(bson.M{"userID": userID}))
 }

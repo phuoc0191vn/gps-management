@@ -1,13 +1,11 @@
 package api
 
 import (
-	"fmt"
-	"gopkg.in/mgo.v2/bson"
 	"net/http"
 
 	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
-	serviceUser "ctigroupjsc.com/phuocnn/gps-management/service/user"
 	"github.com/julienschmidt/httprouter"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type UserHandler struct {
@@ -40,29 +38,4 @@ func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request, p httprout
 	}
 
 	WriteJSON(w, http.StatusOK, user)
-}
-
-func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	cmd := new(serviceUser.AddUser)
-	if err := BindJSON(r, cmd); err != nil {
-		ResponseError(w, r, err)
-		return
-	}
-
-	handler := &serviceUser.AddUserHandler{
-		UserRepository: h.UserRepository,
-	}
-	id, err := handler.Handle(cmd)
-	if err != nil {
-		WriteJSON(w, HTTP_ERROR_CODE_ADD_FAILED, ResponseBody{
-			Message: "unable to add user",
-			Code:    HTTP_ERROR_CODE_ADD_FAILED,
-		})
-		return
-	}
-
-	WriteJSON(w, http.StatusOK, ResponseBody{
-		Message: fmt.Sprintf("add user successfully: %s", id),
-		Code:    http.StatusOK,
-	})
 }

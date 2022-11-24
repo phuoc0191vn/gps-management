@@ -5,12 +5,11 @@ import (
 
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 	"ctigroupjsc.com/phuocnn/gps-management/uitilities/providers/mongo"
-
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-const ActivityLogMongoCollection = "device"
+const ActivityLogMongoCollection = "activityLog"
 
 type ActivityLogMongoRepository struct {
 	provider       *mongo.MongoProvider
@@ -26,14 +25,19 @@ func NewActivityLogMongoRepository(provider *mongo.MongoProvider) *ActivityLogMo
 		Key: []string{
 			"accountID",
 		},
-		Unique: true,
 	})
 
 	collection.EnsureIndex(mgo.Index{
 		Key: []string{
 			"deviceID",
 		},
-		Unique: true,
+	})
+
+	collection.EnsureIndex(mgo.Index{
+		Key: []string{
+			"accountID",
+			"deviceID",
+		},
 	})
 
 	return repo
@@ -69,5 +73,14 @@ func (repo *ActivityLogMongoRepository) RemoveByID(id string) error {
 	collection, close := repo.collection()
 	defer close()
 
-	return repo.provider.NewError(collection.RemoveId(id))
+	return repo.provider.NewError(collection.RemoveId(bson.ObjectIdHex(id)))
+}
+
+func (repo *ActivityLogMongoRepository) RemoveByAccountID(accountID string) error {
+	collection, close := repo.collection()
+	defer close()
+
+	_, err := collection.RemoveAll(bson.M{"accountID": accountID})
+
+	return repo.provider.NewError(err)
 }

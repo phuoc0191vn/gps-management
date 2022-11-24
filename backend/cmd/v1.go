@@ -47,16 +47,25 @@ func userRouter(parent *api.Router) {
 	router := parent.Group("/user")
 
 	router.GET("/:id/id", userHandler.GetByID)
-
-	router.POST("", userHandler.AddUser)
 }
 
 func accountRouter(parent *api.Router) {
 	accountHandler := api.AccountHandler{
-		AccountRepository: container.AccountRepository,
+		AccountRepository:     container.AccountRepository,
+		UserRepository:        container.UserRepository,
+		ActivityLogRepository: container.ActivityLogRepository,
+		ReportRepository:      container.ReportRepository,
 	}
 
 	router := parent.Group("/account")
 
+	router.GET("", accountHandler.All)
+	router.GET("/detail/:id", accountHandler.Detail)
+	router.GET("/reset/:id", accountHandler.Reset)
+
 	router.POST("", accountHandler.Add)
+
+	router.PATCH("/:userID", accountHandler.Update)
+
+	router.DELETE("/:id", accountHandler.Delete)
 }

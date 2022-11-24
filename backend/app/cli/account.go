@@ -1,12 +1,13 @@
 package cli
 
 import (
+	"fmt"
+	"log"
+
 	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 	serviceAccount "ctigroupjsc.com/phuocnn/gps-management/service/account"
 	serviceUser "ctigroupjsc.com/phuocnn/gps-management/service/user"
-	"fmt"
-	"log"
 )
 
 type AccountCommander struct {
@@ -84,7 +85,7 @@ func (h *AccountCommander) Add() {
 	var role int
 	fmt.Scanln(&role)
 
-	var scopes = make([]string, 0)
+	scopes := make([]string, 0)
 	scopes = model.DefaultUserScopes
 	if role == 1 {
 		scopes = model.DefaultRootScopes
@@ -97,7 +98,6 @@ func (h *AccountCommander) Add() {
 		Email:     email,
 		Password:  password,
 		Scopes:    scopes,
-		UserID:    userID,
 		DeviceIDs: nil,
 	}
 	addAccountHandler := serviceAccount.AddAccountHandler{

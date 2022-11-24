@@ -31,12 +31,12 @@
 
           <el-row>
             <el-col :span="11">
-              <el-form-item label="Email">
+              <el-form-item v-if="!isUpdateForm" label="Email">
                 <el-input v-model="form.email"/>
               </el-form-item>
             </el-col>
             <el-col :span="11" style="margin-left: 20px">
-              <el-form-item label="Password">
+              <el-form-item v-if="!isUpdateForm" label="Password">
                 <el-input v-model="form.password"/>
               </el-form-item>
             </el-col>
@@ -44,7 +44,7 @@
 
           <el-row>
             <el-col :span="24">
-              <el-form-item>
+              <el-form-item v-if="!isUpdateForm">
                 <el-select v-model="form.scope" placeholder="Role">
                   <el-option label="Root" value="root"/>
                   <el-option label="Admin" value="admin"/>
@@ -55,7 +55,8 @@
           </el-row>
 
           <el-form-item>
-            <el-button type="primary" @click="onSubmit">Create</el-button>
+            <el-button v-if="!isUpdateForm" type="primary" @click="onSubmit">Create</el-button>
+            <el-button v-if="isUpdateForm" type="primary" @click="onUpdate">Update</el-button>
             <el-button @click="onCancel">Cancel</el-button>
           </el-form-item>
         </el-form>
@@ -63,34 +64,55 @@
     </el-row>
 
     <el-row>
-      <el-col >
-        <el-table table-layout="fixed"
+      <el-col>
+        <el-table ref="datatable" table-layout="fixed"
                   :data="tableData.filter(data => !search || data.name.toLowerCase().includes(search.toLowerCase()))"
-                  height="500" style="width: 100%;">
-          <el-table-column label="Date" prop="date"></el-table-column>
-          <el-table-column label="Name" prop="name"></el-table-column>
-          <el-table-column align="right">
+                  style="width: 100%;">
+          <el-table-column align="center" label="Index" type="index" width="70"></el-table-column>
+          <el-table-column align="center" label="Email" prop="email"></el-table-column>
+          <el-table-column align="center" label="Scopes" prop="scopes"></el-table-column>
+          <el-table-column align="center" label="Created By" prop="createdBy"></el-table-column>
+          <el-table-column align="center" label="Created Time" prop="createdTime"></el-table-column>
+          <el-table-column align="center" label="Updated Time" prop="updatedTime"></el-table-column>
+          <el-table-column align="right" width="300">
             <template v-slot:[slotHeader]="scope">
               <el-input v-model="search" size="mini" placeholder="Type to search"/>
             </template>
             <template v-slot="scope">
-              <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">Edit</el-button>
+              <el-button size="mini" type="info" @click="handleView(scope.$index, scope.row)">View</el-button>
+              <el-button size="mini" type="primary" @click="handleEdit(scope.$index, scope.row)">Edit</el-button>
+              <el-button size="mini" type="warning" @click="handleReset(scope.$index, scope.row)">Reset</el-button>
               <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">Delete</el-button>
             </template>
           </el-table-column>
         </el-table>
+        <el-pagination layout="total, sizes, prev, pager, next" :page-size="pageSize" :total="total"
+                       @size-change="changePerPage" @current-change="setPage">
+        </el-pagination>
       </el-col>
     </el-row>
 
+    <el-dialog id="eModal" :title="this.titleModel" :visible.sync="dialogVisible">
+      <sweet-code :code="SanitizeObject(this.jsonModel)">
+        <code class="json"></code>
+      </sweet-code>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import {addUser, datatable, deleteUser, resetUser, updateUser, userDetail} from "@/api/user";
+import SweetCode from '@/components/SweetCode/index'
+import {sanitizeObject} from '@/utils'
+
 export default {
   name: "Account",
+  components: {SweetCode},
   data() {
     return {
       slotHeader: 'header',
+      isUpdateForm: false,
+      userIDUpdate: '',
       form: {
         name: '',
         identityID: '',
@@ -99,94 +121,129 @@ export default {
         email: '',
         password: '',
         scope: '',
+        scopes: [],
       },
-      tableData: [
-        {
-          date: '2016-05-03',
-          name: 'Tom',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-02',
-          name: 'John',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-04',
-          name: 'Morgan',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        },
-        {
-          date: '2016-05-01',
-          name: 'Jessy',
-          address: 'No. 189, Grove St, Los Angeles'
-        }
-      ],
+      tableData: [],
+      page: 1,
+      pageSize: 10,
+      total: 0,
       search: '',
+      dialogVisible: false,
+      titleModel: '',
+      jsonModel: '',
     }
   },
   methods: {
-    onSubmit() {
-      this.$message('submit!')
+    SanitizeObject(obj) {
+      return sanitizeObject(obj)
     },
-    onCancel() {
-      this.$message({
-        message: 'cancel!',
-        type: 'warning'
+    changePerPage(val) {
+      this.pageSize = val
+      this.getDatatable()
+    },
+    setPage(val) {
+      this.page = val
+      this.getDatatable()
+    },
+    onSubmit() {
+      if (this.form.scope === 'root') {
+        this.form.scopes = ['root:*:*']
+      }
+      if (this.form.scope === 'admin') {
+        this.form.scopes = ['admin:*:*']
+      }
+      if (this.form.scope === 'user') {
+        this.form.scopes = ['user:*:*']
+      }
+      addUser(this.form).then(() => {
+        this.$message('add account successfully')
+        this.clear()
+        this.getDatatable()
+      }).catch(() => {
+        this.$message({
+          message: 'unable to add account',
+          type: 'error'
+        })
+      })
+
+    },
+    onUpdate() {
+      this.form.scopes = []
+      this.form.email = ''
+      this.form.password = ''
+
+      updateUser(this.userIDUpdate, this.form).then(() => {
+        this.$message('update account successfully')
+        this.clear()
+      }).catch(() => {
+        this.$message({
+          message: 'unable to update account',
+          type: 'error'
+        })
       })
     },
+    onCancel() {
+      this.clear()
+    },
+    handleView(index, row) {
+      userDetail(row.id).then(resp => {
+        this.dialogVisible = true
+        this.jsonModel = resp.data
+        this.titleModel = 'Account: ' + resp.data.name
+      }).catch(e => {
+        console.log('error: ', e)
+      })
+
+    },
     handleEdit(index, row) {
-      console.log(index, row);
+      userDetail(row.id).then(resp => {
+        this.isUpdateForm = true
+        this.form.name = resp.data.name
+        this.form.identityID = resp.data.identityID
+        this.form.unit = resp.data.unit
+        this.form.phoneNumber = resp.data.phoneNumber
+
+        this.userIDUpdate = resp.data.userID
+      }).catch(e => {
+        console.log('error: ', e)
+      })
+    },
+    handleReset(index, row) {
+      if(confirm("Do you really want to reset account?")){
+        resetUser(row.id).then(resp => {
+          this.$message('reset account successfully')
+        }).catch(e => {
+          console.log('error: ', e)
+        })
+      }
     },
     handleDelete(index, row) {
-      console.log(index, row);
+      if(confirm("Do you really want to delete account?")){
+        deleteUser(row.id).then(resp => {
+          this.$message('delete account successfully')
+          this.getDatatable()
+        }).catch(e => {
+          console.log('error: ', e)
+        })
+      }
+    },
+    getDatatable() {
+      datatable(this.page, this.pageSize).then(resp => {
+        this.tableData = resp.data["Data"]
+        this.total = resp.data["Total"]
+      }).catch(e => {
+        console.log('error: ', e)
+      })
+    },
+    clear() {
+      this.form = {}
+      this.isUpdateForm = false
+      this.userIDUpdate = ''
     }
-  }
+  },
+  created() {
+    this.getDatatable()
+  },
 }
 </script>
 
