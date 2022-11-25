@@ -103,6 +103,35 @@ func (repo *AccountMongoRepository) FindByEmail(email string) (*model.Account, e
 	return &result, repo.provider.NewError(err)
 }
 
+func (repo *AccountMongoRepository) GetDeviceIDsByID(id string) ([]string, error) {
+	if !bson.IsObjectIdHex(id) {
+		return nil, fmt.Errorf("invalid id")
+	}
+	collection, close := repo.collection()
+	defer close()
+
+	var result model.Account
+	err := collection.FindId(bson.ObjectIdHex(id)).One(&result)
+	if err != nil {
+		return nil, repo.provider.NewError(err)
+	}
+
+	return result.DeviceIDs, nil
+}
+
+func (repo *AccountMongoRepository) GetChildAccounts(email string) ([]model.Account, error) {
+	collection, close := repo.collection()
+	defer close()
+
+	var result []model.Account
+	err := collection.Find(bson.M{"createdBy": email}).Select(bson.M{"_id": 1, "email": 1}).All(&result)
+	if err != nil {
+		return nil, repo.provider.NewError(err)
+	}
+
+	return result, nil
+}
+
 func (repo *AccountMongoRepository) Save(account model.Account) error {
 	collection, close := repo.collection()
 	defer close()
@@ -115,6 +144,22 @@ func (repo *AccountMongoRepository) UpdateByEmail(email string, account model.Ac
 	defer close()
 
 	return repo.provider.NewError(collection.Update(bson.M{"email": email}, account))
+}
+
+func (repo *AccountMongoRepository) UpdateDeviceIDs(id string, deviceIDs []string) error {
+	if !bson.IsObjectIdHex(id) {
+		return fmt.Errorf("invalid id")
+	}
+	collection, close := repo.collection()
+	defer close()
+
+	err := collection.UpdateId(bson.ObjectIdHex(id), bson.M{
+		"$set": bson.M{
+			"deviceIDs": deviceIDs,
+		},
+	})
+
+	return repo.provider.NewError(err)
 }
 
 func (repo *AccountMongoRepository) RemoveByID(id string) error {

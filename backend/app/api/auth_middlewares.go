@@ -19,6 +19,11 @@ func Scope(r *http.Request) string {
 	return result
 }
 
+func AccountID(r *http.Request) string {
+	result, _ := r.Context().Value("accountID").(string)
+	return result
+}
+
 func RequireAuth(JWTKey string) func(next httprouter.Handle) httprouter.Handle {
 	return func(next httprouter.Handle) httprouter.Handle {
 		return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -36,6 +41,7 @@ func RequireAuth(JWTKey string) func(next httprouter.Handle) httprouter.Handle {
 
 			r = r.WithContext(context.WithValue(r.Context(), "user.email", claims.Subject))
 			r = r.WithContext(context.WithValue(r.Context(), "user.scope", claims.Scope))
+			r = r.WithContext(context.WithValue(r.Context(), "accountID", claims.AccountID))
 
 			next(w, r, p)
 		}

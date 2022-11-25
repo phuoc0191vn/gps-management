@@ -4,23 +4,19 @@ import (
 	"net/http"
 	"strconv"
 
-	"ctigroupjsc.com/phuocnn/gps-management/model"
-
 	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
-	serviceAccount "ctigroupjsc.com/phuocnn/gps-management/service/account"
+	serviceDevice "ctigroupjsc.com/phuocnn/gps-management/service/device"
 	"github.com/julienschmidt/httprouter"
 )
 
-type AccountHandler struct {
-	AccountRepository     repository.AccountRepository
-	UserRepository        repository.UserRepository
-	ActivityLogRepository repository.ActivityLogRepository
-	ReportRepository      repository.ReportRepository
+type DeviceHandler struct {
+	DeviceRepository  repository.DeviceRepository
+	AccountRepository repository.AccountRepository
 }
 
-func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (h *DeviceHandler) All(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	if !IsScopeAllowed(r) {
-		data, err := h.AccountRepository.FindByEmail(Email(r))
+		data, err := h.DeviceRepository.FindByAccountID(AccountID(r))
 		if err != nil {
 			WriteJSON(w, http.StatusInternalServerError, ResponseBody{
 				Message: err.Error(),
@@ -36,7 +32,7 @@ func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httproute
 				Data  interface{}
 			}{
 				Total: 1,
-				Data:  []model.Account{*data},
+				Data:  data,
 			},
 		})
 		return
@@ -70,7 +66,7 @@ func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httproute
 			}
 		}
 
-		total, data, err := h.AccountRepository.Pagination(page, pageSize)
+		total, data, err := h.DeviceRepository.Pagination(page, pageSize)
 		if err != nil {
 			WriteJSON(w, http.StatusInternalServerError, ResponseBody{
 				Message: err.Error(),
@@ -93,7 +89,7 @@ func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	// normal response
-	accounts, err := h.AccountRepository.All()
+	accounts, err := h.DeviceRepository.All()
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
 			Message: err.Error(),
@@ -103,39 +99,20 @@ func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	WriteJSON(w, http.StatusOK, ResponseBody{
-		Message: "add account successfully",
-		Code:    http.StatusOK,
-		Data:    accounts,
-	})
-}
-
-func (h *AccountHandler) AccountInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	data, err := h.AccountRepository.FindByEmail(Email(r))
-	if err != nil {
-		return
-	}
-
-	WriteJSON(w, http.StatusOK, ResponseBody{
 		Code: http.StatusOK,
-		Data: data,
+		Data: accounts,
 	})
 }
 
-func (h *AccountHandler) Detail(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (h *DeviceHandler) Detail(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	id := p.ByName("id")
 
-	detailAccountHandler := serviceAccount.DetailAccountHandler{
-		AccountRepository: h.AccountRepository,
-		UserRepository:    h.UserRepository,
-	}
-
-	data, err := detailAccountHandler.Handle(id)
+	data, err := h.DeviceRepository.FindByID(id)
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
-			Message: err.Error(),
 			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
 		})
-		return
 	}
 
 	WriteJSON(w, http.StatusOK, ResponseBody{
@@ -144,12 +121,12 @@ func (h *AccountHandler) Detail(w http.ResponseWriter, r *http.Request, p httpro
 	})
 }
 
-func (h *AccountHandler) Add(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (h *DeviceHandler) Add(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	if !IsScopeAllowed(r) {
 		return
 	}
 
-	cmd := new(serviceAccount.AddAccount)
+	cmd := new(serviceDevice.AddDevice)
 	if err := BindJSON(r, cmd); err != nil {
 		WriteJSON(w, http.StatusBadRequest, ResponseBody{
 			Message: err.Error(),
@@ -157,13 +134,13 @@ func (h *AccountHandler) Add(w http.ResponseWriter, r *http.Request, p httproute
 		})
 		return
 	}
-	cmd.CreatedBy = Email(r)
 
-	handler := &serviceAccount.AddAccountHandler{
+	addDeviceHandler := serviceDevice.AddDeviceHandler{
+		DeviceRepository:  h.DeviceRepository,
 		AccountRepository: h.AccountRepository,
-		UserRepository:    h.UserRepository,
 	}
-	err := handler.Handle(cmd)
+
+	err := addDeviceHandler.Handle(cmd)
 	if err != nil {
 		WriteJSON(w, HTTP_ERROR_CODE_ADD_FAILED, ResponseBody{
 			Message: err.Error(),
@@ -173,13 +150,13 @@ func (h *AccountHandler) Add(w http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	WriteJSON(w, http.StatusOK, ResponseBody{
-		Message: "add account successfully",
+		Message: "add device successfully",
 		Code:    http.StatusOK,
 	})
 }
 
-func (h *AccountHandler) Update(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	cmd := new(serviceAccount.UpdateAccount)
+func (h *DeviceHandler) Update(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	cmd := new(serviceDevice.UpdateDevice)
 	if err := BindJSON(r, cmd); err != nil {
 		WriteJSON(w, http.StatusBadRequest, ResponseBody{
 			Message: err.Error(),
@@ -187,63 +164,47 @@ func (h *AccountHandler) Update(w http.ResponseWriter, r *http.Request, p httpro
 		})
 		return
 	}
-	cmd.UserID = p.ByName("userID")
 
-	handler := &serviceAccount.UpdateAccountHandler{
-		AccountRepository: h.AccountRepository,
-		UserRepository:    h.UserRepository,
-	}
-	err := handler.Handle(cmd)
-	if err != nil {
-		WriteJSON(w, HTTP_ERROR_CODE_ADD_FAILED, ResponseBody{
-			Message: err.Error(),
-			Code:    HTTP_ERROR_CODE_ADD_FAILED,
-		})
-		return
-	}
-
-	WriteJSON(w, http.StatusOK, ResponseBody{
-		Message: "update account successfully",
-		Code:    http.StatusOK,
-	})
-}
-
-func (h *AccountHandler) Delete(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	if !IsScopeAllowed(r) {
-		return
+		cmd.AccountID = ""
 	}
 
-	deleteAccountHandler := &serviceAccount.DeleteAccountHandler{
-		AccountRepository:     h.AccountRepository,
-		UserRepository:        h.UserRepository,
-		ActivityLogRepository: h.ActivityLogRepository,
-		ReportRepository:      h.ReportRepository,
+	updateDeviceHandler := serviceDevice.UpdateDeviceHandler{
+		DeviceRepository:  h.DeviceRepository,
+		AccountRepository: h.AccountRepository,
 	}
 
-	err := deleteAccountHandler.Handle(p.ByName("id"))
+	err := updateDeviceHandler.Handle(p.ByName("id"), cmd)
 	if err != nil {
-		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
+		WriteJSON(w, HTTP_ERROR_CODE_UPDATE_FAILED, ResponseBody{
 			Message: err.Error(),
-			Code:    http.StatusInternalServerError,
+			Code:    HTTP_ERROR_CODE_UPDATE_FAILED,
 		})
 		return
 	}
 
 	WriteJSON(w, http.StatusOK, ResponseBody{
-		Message: "delete account successfully",
+		Message: "update device successfully",
 		Code:    http.StatusOK,
 	})
 }
 
-// Reset func is delete all data, do not delete account
-func (h *AccountHandler) Reset(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (h *DeviceHandler) Delete(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	if !IsScopeAllowed(r) {
 		return
 	}
 
 	id := p.ByName("id")
+	device, err := h.DeviceRepository.FindByID(id)
+	if err != nil {
+		WriteJSON(w, http.StatusNotFound, ResponseBody{
+			Message: err.Error(),
+			Code:    http.StatusNotFound,
+		})
+		return
+	}
 
-	err := h.ActivityLogRepository.RemoveByAccountID(id)
+	err = h.DeviceRepository.RemoveByID(id)
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
 			Message: err.Error(),
@@ -252,7 +213,27 @@ func (h *AccountHandler) Reset(w http.ResponseWriter, r *http.Request, p httprou
 		return
 	}
 
-	err = h.ReportRepository.RemoveByAccountID(id)
+	oldAccount, err := h.AccountRepository.GetDeviceIDsByID(device.AccountID)
+	if err != nil {
+		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
+			Message: err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
+		return
+	}
+
+	tmp := make([]string, 0)
+	for i := 0; i < len(oldAccount); i++ {
+		if oldAccount[i] == device.ID.Hex() {
+			continue
+		}
+
+		tmp = append(tmp, oldAccount[i])
+	}
+	oldAccount = make([]string, 0)
+	oldAccount = tmp
+
+	err = h.AccountRepository.UpdateDeviceIDs(device.AccountID, oldAccount)
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
 			Message: err.Error(),
@@ -262,33 +243,7 @@ func (h *AccountHandler) Reset(w http.ResponseWriter, r *http.Request, p httprou
 	}
 
 	WriteJSON(w, http.StatusOK, ResponseBody{
-		Message: "reset account successfully",
+		Message: "delete device successfully",
 		Code:    http.StatusOK,
 	})
-}
-
-func (h *AccountHandler) GetChildAccounts(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	if !IsScopeAllowed(r) {
-		return
-	}
-
-	result, err := h.AccountRepository.GetChildAccounts(Email(r))
-	if err != nil {
-		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
-			Message: err.Error(),
-			Code:    http.StatusInternalServerError,
-		})
-	}
-
-	WriteJSON(w, http.StatusOK, ResponseBody{
-		Data: result,
-		Code: http.StatusOK,
-	})
-}
-
-func IsScopeAllowed(r *http.Request) bool {
-	if Scope(r) == model.ScopeUser {
-		return false
-	}
-	return true
 }

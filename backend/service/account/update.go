@@ -1,7 +1,10 @@
 package account
 
 import (
+	"time"
+
 	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
+	utilities "ctigroupjsc.com/phuocnn/gps-management/uitilities"
 )
 
 type UpdateAccount struct {
@@ -48,5 +51,6 @@ func (h *UpdateAccountHandler) Handle(a *UpdateAccount) error {
 		user.PhoneNumber = a.PhoneNumber
 	}
 
+	user.UpdatedTime = utilities.TimeInUTC(time.Now())
 	return h.UserRepository.UpdateByID(a.UserID, *user)
 }

@@ -25,6 +25,7 @@ func NewAPIv1(container *Container) http.Handler {
 
 	userRouter(v1)
 	accountRouter(v1)
+	deviceRouter(v1)
 
 	return router
 }
@@ -63,10 +64,29 @@ func accountRouter(parent *api.Router) {
 	router.GET("/info", accountHandler.AccountInfo)
 	router.GET("/detail/:id", accountHandler.Detail)
 	router.GET("/reset/:id", accountHandler.Reset)
+	router.GET("/child-accounts", accountHandler.GetChildAccounts)
 
 	router.POST("", accountHandler.Add)
 
 	router.PATCH("/:userID", accountHandler.Update)
 
 	router.DELETE("/:id", accountHandler.Delete)
+}
+
+func deviceRouter(parent *api.Router) {
+	deviceHandler := api.DeviceHandler{
+		DeviceRepository:  container.DeviceRepository,
+		AccountRepository: container.AccountRepository,
+	}
+
+	router := parent.Group("/device")
+
+	router.GET("", deviceHandler.All)
+	router.GET("/detail/:id", deviceHandler.Detail)
+
+	router.POST("", deviceHandler.Add)
+
+	router.PATCH("/:id", deviceHandler.Update)
+
+	router.DELETE("/:id", deviceHandler.Delete)
 }

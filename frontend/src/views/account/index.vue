@@ -101,7 +101,15 @@
 </template>
 
 <script>
-import {addUser, datatable, deleteUser, resetUser, updateUser, userDetail, userInfo} from "@/api/user";
+import {
+  accountDetail,
+  accountInfo,
+  addAccount,
+  datatable,
+  deleteAccount,
+  resetAccount,
+  updateAccount
+} from "@/api/account";
 import SweetCode from '@/components/SweetCode/index'
 import {sanitizeObject} from '@/utils'
 
@@ -146,7 +154,7 @@ export default {
       this.getDatatable()
     },
     onSubmit() {
-      addUser(this.form).then(() => {
+      addAccount(this.form).then(() => {
         this.$message('add account successfully')
         this.clear()
         this.getDatatable()
@@ -162,7 +170,7 @@ export default {
       this.form.email = ''
       this.form.password = ''
 
-      updateUser(this.userIDUpdate, this.form).then(() => {
+      updateAccount(this.userIDUpdate, this.form).then(() => {
         this.$message('update account successfully')
         this.clear()
       }).catch(() => {
@@ -176,7 +184,7 @@ export default {
       this.clear()
     },
     handleView(index, row) {
-      userDetail(row.id).then(resp => {
+      accountDetail(row.id).then(resp => {
         this.dialogVisible = true
         this.jsonModel = resp.data
         this.titleModel = 'Account: ' + resp.data.name
@@ -186,7 +194,7 @@ export default {
 
     },
     handleEdit(index, row) {
-      userDetail(row.id).then(resp => {
+      accountDetail(row.id).then(resp => {
         this.isUpdateForm = true
         this.form.name = resp.data.name
         this.form.identityID = resp.data.identityID
@@ -201,7 +209,7 @@ export default {
     },
     handleReset(index, row) {
       if (confirm("Do you really want to reset account?")) {
-        resetUser(row.id).then(resp => {
+        resetAccount(row.id).then(resp => {
           this.$message('reset account successfully')
         }).catch(e => {
           console.log('error: ', e)
@@ -210,7 +218,7 @@ export default {
     },
     handleDelete(index, row) {
       if (confirm("Do you really want to delete account?")) {
-        deleteUser(row.id).then(resp => {
+        deleteAccount(row.id).then(resp => {
           this.$message('delete account successfully')
           this.getDatatable()
         }).catch(e => {
@@ -234,7 +242,7 @@ export default {
   },
   created() {
     this.getDatatable()
-    userInfo().then(resp => {
+    accountInfo().then(resp => {
       this.scope = resp.data.scope
     })
   },

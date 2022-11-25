@@ -8,7 +8,7 @@ export function login(data) {
   })
 }
 
-export function addUser(data) {
+export function addAccount(data) {
   return request({
     url: '/account',
     method: 'post',
@@ -16,7 +16,7 @@ export function addUser(data) {
   })
 }
 
-export function updateUser(id, data) {
+export function updateAccount(id, data) {
   return request({
     url: '/account/' + id,
     method: 'patch',
@@ -24,30 +24,37 @@ export function updateUser(id, data) {
   })
 }
 
-export function resetUser(id) {
+export function resetAccount(id) {
   return request({
     url: '/account/reset/' + id,
     method: 'get',
   })
 }
 
-export function deleteUser(id) {
+export function deleteAccount(id) {
   return request({
     url: '/account/' + id,
     method: 'delete',
   })
 }
 
-export function userInfo() {
+export function accountInfo() {
   return request({
     url: '/account/info',
     method: 'get',
   })
 }
 
-export function userDetail(id) {
+export function accountDetail(id) {
   return request({
     url: '/account/detail/' + id,
+    method: 'get',
+  })
+}
+
+export function getChildAccounts() {
+  return request({
+    url: '/account/child-accounts',
     method: 'get',
   })
 }

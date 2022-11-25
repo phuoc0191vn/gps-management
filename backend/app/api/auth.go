@@ -19,6 +19,7 @@ import (
 type MyCustomClaims struct {
 	jwt.StandardClaims
 	Scope     string   `json:"scope"`
+	AccountID string   `json:"accountID"`
 	DeviceIDs []string `json:"deviceIDs"`
 }
 
@@ -107,6 +108,7 @@ func (h *AuthHandler) makeClaims(account model.Account) MyCustomClaims {
 			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().AddDate(10, 0, 0).Unix(),
 		},
+		AccountID: account.ID.Hex(),
 		Scope:     account.Scope,
 		DeviceIDs: account.DeviceIDs,
 	}
