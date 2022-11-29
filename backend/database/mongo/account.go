@@ -60,11 +60,11 @@ func (repo *AccountMongoRepository) All() ([]model.Account, error) {
 	return result, repo.provider.NewError(err)
 }
 
-func (repo *AccountMongoRepository) Pagination(page int, limit int) (int, []model.Account, error) {
+func (repo *AccountMongoRepository) Pagination(page int, limit int, condition map[string]interface{}) (int, []model.Account, error) {
 	collection, close := repo.collection()
 	defer close()
 
-	query := collection.Find(nil)
+	query := collection.Find(condition)
 
 	total, err := query.Count()
 	if err != nil {

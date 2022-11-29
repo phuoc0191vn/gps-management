@@ -1,1 +1,0 @@
-time="2022-11-29T12:05:31.892786816+07:00" level=info msg="Listen and serve GPS-Management API at 0.0.0.0:8081\n"

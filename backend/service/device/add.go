@@ -31,6 +31,8 @@ type AddDeviceHandler struct {
 	AccountRepository repository.AccountRepository
 }
 
+// todo: current logic: 1 account only 1 device --> add 1 device will disable all other devices
+
 func (h *AddDeviceHandler) Handle(d *AddDevice) error {
 	if err := d.Valid(); err != nil {
 		return err
@@ -65,6 +67,12 @@ func (h *AddDeviceHandler) Handle(d *AddDevice) error {
 	err = h.DeviceRepository.Save(device)
 	if err != nil {
 		return err
+	}
+
+	if device.Status == model.StatusEnable {
+		for i := 0; i < len(deviceIDs); i++ {
+			h.DeviceRepository.UpdateStatus(deviceIDs[i], model.StatusDisable)
+		}
 	}
 
 	deviceIDs = append(deviceIDs, device.ID.Hex())

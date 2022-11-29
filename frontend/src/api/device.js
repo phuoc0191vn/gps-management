@@ -23,6 +23,13 @@ export function getDetail(id) {
   })
 }
 
+export function toggleStatus(id, status) {
+  return request({
+    url: '/device/toggle-status/' + id + '?status=' + status,
+    method: 'get',
+  })
+}
+
 export function updateDevice(id, data) {
   return request({
     url: '/device/' + id,

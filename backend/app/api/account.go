@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 
 	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
@@ -42,6 +44,14 @@ func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httproute
 		return
 	}
 
+	condition := make(map[string]interface{})
+	if Scope(r) == model.ScopeAdmin {
+		condition["$or"] = []bson.M{
+			{"email": Email(r)},
+			{"createdBy": Email(r)},
+		}
+	}
+
 	output, ok := GetQuery(r, DATATABLE_QUERY_OUTPUT)
 	if ok && output == DATATABLE_QUERY_OUTPUT_DATATABLE {
 		page := 1
@@ -70,7 +80,7 @@ func (h *AccountHandler) All(w http.ResponseWriter, r *http.Request, p httproute
 			}
 		}
 
-		total, data, err := h.AccountRepository.Pagination(page, pageSize)
+		total, data, err := h.AccountRepository.Pagination(page, pageSize, condition)
 		if err != nil {
 			WriteJSON(w, http.StatusInternalServerError, ResponseBody{
 				Message: err.Error(),
@@ -272,6 +282,17 @@ func (h *AccountHandler) GetChildAccounts(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if Scope(r) == model.ScopeRoot {
+		result, err := h.AccountRepository.All()
+		if err == nil {
+			WriteJSON(w, http.StatusOK, ResponseBody{
+				Data: result,
+				Code: http.StatusOK,
+			})
+			return
+		}
+	}
+
 	result, err := h.AccountRepository.GetChildAccounts(Email(r))
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
@@ -284,11 +305,4 @@ func (h *AccountHandler) GetChildAccounts(w http.ResponseWriter, r *http.Request
 		Data: result,
 		Code: http.StatusOK,
 	})
-}
-
-func IsScopeAllowed(r *http.Request) bool {
-	if Scope(r) == model.ScopeUser {
-		return false
-	}
-	return true
 }

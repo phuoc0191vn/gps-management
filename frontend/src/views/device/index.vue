@@ -74,6 +74,10 @@
             <template v-slot="tableScope">
               <el-button size="mini" type="primary" @click="handleEdit(tableScope.$index, tableScope.row)">Edit
               </el-button>
+              <el-button size="mini" style="width: 25%;" type="info"
+                         @click="toggle(tableScope.$index, tableScope.row)">
+                {{ tableScope.row.status === "Enable" ? "Disable" : "Enable" }}
+              </el-button>
               <el-button size="mini" v-if="scope !== 'user'" type="danger"
                          @click="handleDelete(tableScope.$index, tableScope.row)">Delete
               </el-button>
@@ -99,7 +103,7 @@
 import {accountInfo, getChildAccounts,} from "@/api/account";
 import SweetCode from '@/components/SweetCode/index'
 import {sanitizeObject} from '@/utils'
-import {addDevice, datatable, deleteDevice, getDetail, updateDevice} from "@/api/device";
+import {addDevice, datatable, deleteDevice, getDetail, toggleStatus, updateDevice} from "@/api/device";
 
 export default {
   name: "Device",
@@ -170,6 +174,25 @@ export default {
     onCancel() {
       this.clear()
     },
+    toggle(index, row) {
+      let status = 0
+      if (row.status === "Disable") {
+        status = 1
+      }
+
+      if (confirm("Do you really want to update status device?")) {
+        toggleStatus(row.id, status).then(resp => {
+          this.$message('update status device successfully')
+          this.getDatatable()
+        }).catch(e => {
+          this.$message({
+            message: 'unable to update status device: ' + e,
+            type: 'error'
+          })
+        })
+      }
+
+    },
     handleEdit(index, row) {
       getDetail(row.id).then(resp => {
         this.form.name = resp.data.name
@@ -188,9 +211,9 @@ export default {
       })
     },
     handleDelete(index, row) {
-      if (confirm("Do you really want to delete account?")) {
+      if (confirm("Do you really want to delete device?")) {
         deleteDevice(row.id).then(resp => {
-          this.$message('delete account successfully')
+          this.$message('delete device successfully')
           this.getDatatable()
         }).catch(e => {
           console.log('error: ', e)
@@ -246,7 +269,7 @@ export default {
     }
   },
   async created() {
-    accountInfo().then(resp => {
+    await accountInfo().then(resp => {
       this.scope = resp.data.scope
     })
     await this.getChildAccounts()

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+
+	"ctigroupjsc.com/phuocnn/gps-management/model"
 )
 
 func GetQuery(r *http.Request, key string) (string, bool) {
@@ -29,4 +31,11 @@ func BindJSON(r *http.Request, obj interface{}) error {
 	}
 
 	return json.Unmarshal(b, obj)
+}
+
+func IsScopeAllowed(r *http.Request) bool {
+	if Scope(r) == model.ScopeUser {
+		return false
+	}
+	return true
 }

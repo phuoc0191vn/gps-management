@@ -54,11 +54,11 @@ func (repo *DeviceMongoRepository) All() ([]model.Device, error) {
 	return result, repo.provider.NewError(err)
 }
 
-func (repo *DeviceMongoRepository) Pagination(page int, limit int) (int, []model.Device, error) {
+func (repo *DeviceMongoRepository) Pagination(page int, limit int, condition map[string]interface{}) (int, []model.Device, error) {
 	collection, close := repo.collection()
 	defer close()
 
-	query := collection.Find(nil)
+	query := collection.Find(condition)
 
 	total, err := query.Count()
 	if err != nil {
@@ -123,6 +123,17 @@ func (repo *DeviceMongoRepository) UpdateByID(id string, device model.Device) er
 	defer close()
 
 	return repo.provider.NewError(collection.UpdateId(bson.ObjectIdHex(id), device))
+}
+
+func (repo *DeviceMongoRepository) UpdateStatus(id string, status int) error {
+	if !bson.IsObjectIdHex(id) {
+		return fmt.Errorf("invalid id")
+	}
+
+	collection, close := repo.collection()
+	defer close()
+
+	return repo.provider.NewError(collection.UpdateId(bson.ObjectIdHex(id), bson.M{"$set": bson.M{"status": status}}))
 }
 
 func (repo *DeviceMongoRepository) RemoveByID(id string) error {

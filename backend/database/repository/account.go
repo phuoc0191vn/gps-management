@@ -4,7 +4,7 @@ import "ctigroupjsc.com/phuocnn/gps-management/model"
 
 type AccountRepository interface {
 	All() ([]model.Account, error)
-	Pagination(page int, limit int) (int, []model.Account, error)
+	Pagination(page int, limit int, condition map[string]interface{}) (int, []model.Account, error)
 	FindByID(id string) (*model.Account, error)
 	FindByEmail(email string) (*model.Account, error)
 

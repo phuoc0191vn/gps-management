@@ -85,6 +85,7 @@ func deviceRouter(parent *api.Router) {
 	router.GET("", deviceHandler.All)
 	router.GET("/detail/:id", deviceHandler.Detail)
 	router.GET("/status", deviceHandler.GetByStatus)
+	router.GET("/toggle-status/:id", deviceHandler.Toggle)
 
 	router.POST("", deviceHandler.Add)
 

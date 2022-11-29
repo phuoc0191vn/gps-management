@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 
 	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
@@ -40,6 +42,22 @@ func (h *DeviceHandler) All(w http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
+	childAccountIDs := make([]string, 0)
+	condition := make(map[string]interface{})
+	if Scope(r) == model.ScopeAdmin {
+		childAccounts, err := h.AccountRepository.GetChildAccounts(Email(r))
+		if err != nil {
+			childAccounts = make([]model.Account, 0)
+		}
+
+		for i := 0; i < len(childAccounts); i++ {
+			childAccountIDs = append(childAccountIDs, childAccounts[i].ID.Hex())
+		}
+		childAccountIDs = append(childAccountIDs, AccountID(r))
+
+		condition["accountID"] = bson.M{"$in": childAccountIDs}
+	}
+
 	output, ok := GetQuery(r, DATATABLE_QUERY_OUTPUT)
 	if ok && output == DATATABLE_QUERY_OUTPUT_DATATABLE {
 		page := 1
@@ -68,7 +86,7 @@ func (h *DeviceHandler) All(w http.ResponseWriter, r *http.Request, p httprouter
 			}
 		}
 
-		total, data, err := h.DeviceRepository.Pagination(page, pageSize)
+		total, data, err := h.DeviceRepository.Pagination(page, pageSize, condition)
 		if err != nil {
 			WriteJSON(w, http.StatusInternalServerError, ResponseBody{
 				Message: err.Error(),
@@ -218,6 +236,53 @@ func (h *DeviceHandler) Update(w http.ResponseWriter, r *http.Request, p httprou
 			Code:    HTTP_ERROR_CODE_UPDATE_FAILED,
 		})
 		return
+	}
+
+	WriteJSON(w, http.StatusOK, ResponseBody{
+		Message: "update device successfully",
+		Code:    http.StatusOK,
+	})
+}
+
+func (h *DeviceHandler) Toggle(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	statusStr := r.URL.Query().Get("status")
+	status, err := strconv.Atoi(statusStr)
+	if err != nil && !model.IsValidStatus(status) {
+		WriteJSON(w, http.StatusBadRequest, ResponseBody{
+			Code: http.StatusBadRequest,
+		})
+	}
+
+	id := p.ByName("id")
+	device, err := h.DeviceRepository.FindByID(id)
+	if err != nil {
+		WriteJSON(w, http.StatusNotFound, ResponseBody{
+			Code: http.StatusNotFound,
+		})
+	}
+
+	device.Status = status
+	if status == model.StatusEnable {
+		// disable all device of this account
+		deviceIDs, err := h.AccountRepository.GetDeviceIDsByID(device.AccountID)
+		if err != nil {
+			WriteJSON(w, http.StatusInternalServerError, ResponseBody{
+				Message: err.Error(),
+				Code:    http.StatusInternalServerError,
+			})
+		}
+
+		for i := 0; i < len(deviceIDs); i++ {
+			h.DeviceRepository.UpdateStatus(deviceIDs[i], model.StatusDisable)
+		}
+	}
+
+	err = h.DeviceRepository.UpdateByID(id, *device)
+	if err != nil {
+		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
+			Message: err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
 	}
 
 	WriteJSON(w, http.StatusOK, ResponseBody{
