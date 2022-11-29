@@ -26,6 +26,7 @@ func NewAPIv1(container *Container) http.Handler {
 	userRouter(v1)
 	accountRouter(v1)
 	deviceRouter(v1)
+	activityLogRouter(v1)
 
 	return router
 }
@@ -83,10 +84,23 @@ func deviceRouter(parent *api.Router) {
 
 	router.GET("", deviceHandler.All)
 	router.GET("/detail/:id", deviceHandler.Detail)
+	router.GET("/status", deviceHandler.GetByStatus)
 
 	router.POST("", deviceHandler.Add)
 
 	router.PATCH("/:id", deviceHandler.Update)
 
 	router.DELETE("/:id", deviceHandler.Delete)
+}
+
+func activityLogRouter(parent *api.Router) {
+	activityLogHandler := api.ActivityLogHandler{
+		DeviceRepository:      container.DeviceRepository,
+		ActivityLogRepository: container.ActivityLogRepository,
+	}
+
+	router := parent.Group("/activity-log")
+
+	router.GET("/info/:accountID", activityLogHandler.GetInDay)
+	router.GET("/current-location/:accountID", activityLogHandler.CurrentLocation)
 }

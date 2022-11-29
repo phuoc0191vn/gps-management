@@ -13,3 +13,8 @@ type ActivityLog struct {
 	Date      time.Time     `bson:"date" json:"date"`
 	Locations []Location    `bson:"locations" json:"locations"`
 }
+
+// in: start - end
+// get log from table: activityLog --> {filter} --> gen 1 file csv --> save path/to/filename.csv
+// save {path/to/filename.csv} --> table: report
+// out: id (report)

@@ -98,6 +98,15 @@ func (repo *DeviceMongoRepository) FindByAccountID(accountID string) ([]model.De
 	return result, repo.provider.NewError(err)
 }
 
+func (repo *DeviceMongoRepository) FindDeviceByStatus(accountID string, status int) ([]model.Device, error) {
+	collection, close := repo.collection()
+	defer close()
+
+	result := make([]model.Device, 0)
+	err := collection.Find(bson.M{"accountID": accountID, "status": status}).All(&result)
+	return result, repo.provider.NewError(err)
+}
+
 func (repo *DeviceMongoRepository) Save(device model.Device) error {
 	collection, close := repo.collection()
 	defer close()

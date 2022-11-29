@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 
+
+export function getEnableDevice() {
+  return request({
+    url: '/device/status?status=1',
+    method: 'get',
+  })
+}
+
 export function addDevice(data) {
   return request({
     url: '/device',

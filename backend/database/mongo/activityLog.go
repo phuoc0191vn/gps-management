@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"fmt"
+	"time"
 
 	"ctigroupjsc.com/phuocnn/gps-management/model"
 	"ctigroupjsc.com/phuocnn/gps-management/uitilities/providers/mongo"
@@ -40,6 +41,15 @@ func NewActivityLogMongoRepository(provider *mongo.MongoProvider) *ActivityLogMo
 		},
 	})
 
+	collection.EnsureIndex(mgo.Index{
+		Key: []string{
+			"accountID",
+			"deviceID",
+			"date",
+		},
+		Unique: true,
+	})
+
 	return repo
 }
 
@@ -59,11 +69,51 @@ func (repo *ActivityLogMongoRepository) All() ([]model.ActivityLog, error) {
 	return result, repo.provider.NewError(err)
 }
 
+func (repo *ActivityLogMongoRepository) GetInDay(deviceID, accountID string, date time.Time) (*model.ActivityLog, error) {
+	collection, close := repo.collection()
+	defer close()
+
+	date = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+
+	result := model.ActivityLog{}
+	err := collection.Find(bson.M{
+		"accountID": accountID,
+		"deviceID":  deviceID,
+		"date":      date,
+	}).One(&result)
+	return &result, repo.provider.NewError(err)
+}
+
 func (repo *ActivityLogMongoRepository) Save(log model.ActivityLog) error {
 	collection, close := repo.collection()
 	defer close()
 
+	log.Date = time.Date(log.Date.Year(), log.Date.Month(), log.Date.Day(), 0, 0, 0, 0, log.Date.Location())
+
+	var oldLog model.ActivityLog
+	err := collection.Find(bson.M{
+		"accountID": log.AccountID,
+		"deviceID":  log.DeviceID,
+		"date":      log.Date,
+	}).One(&oldLog)
+
+	if err == nil {
+		oldLog.Locations = append(oldLog.Locations, log.Locations...)
+		return repo.provider.NewError(collection.UpdateId(oldLog.ID.Hex(), oldLog))
+	}
+
 	return repo.provider.NewError(collection.Insert(log))
+}
+
+func (repo *ActivityLogMongoRepository) UpdateByID(id string, log model.ActivityLog) error {
+	if !bson.IsObjectIdHex(id) {
+		return fmt.Errorf("invalid id: %s", id)
+	}
+
+	collection, close := repo.collection()
+	defer close()
+
+	return repo.provider.NewError(collection.UpdateId(bson.ObjectIdHex(id), log))
 }
 
 func (repo *ActivityLogMongoRepository) RemoveByID(id string) error {

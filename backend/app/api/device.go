@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"ctigroupjsc.com/phuocnn/gps-management/model"
+
 	"ctigroupjsc.com/phuocnn/gps-management/database/repository"
 	serviceDevice "ctigroupjsc.com/phuocnn/gps-management/service/device"
 	"github.com/julienschmidt/httprouter"
@@ -89,7 +91,7 @@ func (h *DeviceHandler) All(w http.ResponseWriter, r *http.Request, p httprouter
 	}
 
 	// normal response
-	accounts, err := h.DeviceRepository.All()
+	accounts, err := h.DeviceRepository.FindByAccountID(AccountID(r))
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
 			Message: err.Error(),
@@ -101,6 +103,41 @@ func (h *DeviceHandler) All(w http.ResponseWriter, r *http.Request, p httprouter
 	WriteJSON(w, http.StatusOK, ResponseBody{
 		Code: http.StatusOK,
 		Data: accounts,
+	})
+}
+
+func (h *DeviceHandler) GetByStatus(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	status, ok := GetQuery(r, "status")
+	if !ok {
+		status = "0"
+	}
+
+	statusInt := model.StatusEnable
+	var err error
+	statusInt, err = strconv.Atoi(status)
+	if err != nil {
+		statusInt = model.StatusDisable
+	}
+
+	data, err := h.DeviceRepository.FindDeviceByStatus(AccountID(r), statusInt)
+	if err != nil {
+		WriteJSON(w, http.StatusInternalServerError, ResponseBody{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		})
+	}
+
+	if statusInt == model.StatusEnable && len(data) > 0 {
+		WriteJSON(w, http.StatusOK, ResponseBody{
+			Code: http.StatusOK,
+			Data: data[0],
+		})
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, ResponseBody{
+		Code: http.StatusOK,
+		Data: data,
 	})
 }
 

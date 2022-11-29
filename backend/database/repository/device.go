@@ -7,6 +7,7 @@ type DeviceRepository interface {
 	Pagination(page int, limit int) (int, []model.Device, error)
 	FindByID(id string) (*model.Device, error)
 	FindByAccountID(accountID string) ([]model.Device, error)
+	FindDeviceByStatus(accountID string, status int) ([]model.Device, error)
 
 	Save(device model.Device) error
 
