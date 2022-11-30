@@ -27,6 +27,7 @@ func NewAPIv1(container *Container) http.Handler {
 	accountRouter(v1)
 	deviceRouter(v1)
 	activityLogRouter(v1)
+	contactRouter(v1)
 
 	return router
 }
@@ -112,4 +113,20 @@ func activityLogRouter(parent *api.Router) {
 	reportRouter.GET("/generate/:id", activityLogHandler.GenerateReport)
 	reportRouter.GET("/download/:id", activityLogHandler.Download)
 	reportRouter.GET("/delete/:id", activityLogHandler.Delete)
+}
+
+func contactRouter(parent *api.Router) {
+	contactHandler := api.ContactHandler{
+		ContactRepository: container.ContactRepository,
+		AccountRepository: container.AccountRepository,
+	}
+
+	router := parent.Group("/contact")
+
+	router.GET("", contactHandler.All)
+	router.GET("/done/:id", contactHandler.Done)
+
+	router.POST("", contactHandler.Add)
+
+	router.DELETE("/:id", contactHandler.Delete)
 }

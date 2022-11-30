@@ -164,7 +164,6 @@ export default {
           type: 'error'
         })
       })
-
     },
     onUpdate() {
       this.form.email = ''
@@ -191,7 +190,6 @@ export default {
       }).catch(e => {
         console.log('error: ', e)
       })
-
     },
     handleEdit(index, row) {
       accountDetail(row.id).then(resp => {

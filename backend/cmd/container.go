@@ -36,6 +36,7 @@ type Container struct {
 	DeviceRepository       repository.DeviceRepository
 	ActivityLogRepository  repository.ActivityLogRepository
 	ReportRepository       repository.ReportRepository
+	ContactRepository      repository.ContactRepository
 }
 
 func NewContainer(config Config) (*Container, error) {
@@ -102,4 +103,5 @@ func (container *Container) LoadRepositoryImplementations(config Config) {
 	container.DeviceRepository = database.NewDeviceMongoRepository(container.MongoProvider)
 	container.ActivityLogRepository = database.NewActivityLogMongoRepository(container.MongoProvider)
 	container.ReportRepository = database.NewReportMongoRepository(container.MongoProvider)
+	container.ContactRepository = database.NewContactMongoRepository(container.MongoProvider)
 }
