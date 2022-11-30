@@ -282,17 +282,6 @@ func (h *AccountHandler) GetChildAccounts(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if Scope(r) == model.ScopeRoot {
-		result, err := h.AccountRepository.All()
-		if err == nil {
-			WriteJSON(w, http.StatusOK, ResponseBody{
-				Data: result,
-				Code: http.StatusOK,
-			})
-			return
-		}
-	}
-
 	result, err := h.AccountRepository.GetChildAccounts(Email(r))
 	if err != nil {
 		WriteJSON(w, http.StatusInternalServerError, ResponseBody{

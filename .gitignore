@@ -28,6 +28,7 @@ gen
 
 .env
 backend/go.sum
+backend/cmd/gps-management
 
 .DS_Store
 frontend/node_modules/

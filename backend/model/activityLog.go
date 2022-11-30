@@ -14,7 +14,11 @@ type ActivityLog struct {
 	Locations []Location    `bson:"locations" json:"locations"`
 }
 
-// in: start - end
-// get log from table: activityLog --> {filter} --> gen 1 file csv --> save path/to/filename.csv
-// save {path/to/filename.csv} --> table: report
-// out: id (report)
+type ActivityLogData struct {
+	Date      time.Time `bson:"date" json:"date"`
+	Longitude float64   `bson:"longitude" json:"longitude"`
+	Latitude  float64   `bson:"latitude" json:"latitude"`
+	Address   string    `bson:"address" json:"address"`
+	TimeStamp int64     `bson:"timestamp" json:"timestamp"`
+	Speed     string    `bson:"speed" json:"speed"`
+}

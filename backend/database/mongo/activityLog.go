@@ -84,6 +84,68 @@ func (repo *ActivityLogMongoRepository) GetInDay(deviceID, accountID string, dat
 	return &result, repo.provider.NewError(err)
 }
 
+func (repo *ActivityLogMongoRepository) GetRange(deviceID, accountID string, start, end time.Time) ([]model.ActivityLog, error) {
+	collection, close := repo.collection()
+	defer close()
+
+	start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
+	end = time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, end.Location())
+
+	result := make([]model.ActivityLog, 0)
+	err := collection.Find(bson.M{
+		"accountID": accountID,
+		"deviceID":  deviceID,
+		"date":      "date",
+	}).All(&result)
+	return result, repo.provider.NewError(err)
+}
+
+func (repo *ActivityLogMongoRepository) FilterReport(filter model.Filter) (chan model.ActivityLogData, chan error) {
+	collection, closeCollection := repo.collection()
+
+	filter.StartTime = time.Date(filter.StartTime.Year(), filter.StartTime.Month(), filter.StartTime.Day(), 0, 0, 0, 0, filter.StartTime.Location())
+	filter.EndTime = time.Date(filter.EndTime.Year(), filter.EndTime.Month(), filter.EndTime.Day(), 0, 0, 0, 0, filter.EndTime.Location())
+
+	match := bson.M{
+		"accountID": filter.AccountID,
+		"deviceID":  filter.DeviceID,
+		"date":      bson.M{"$gte": filter.StartTime, "$lte": filter.EndTime},
+	}
+
+	pipeline := []bson.M{
+		{"$match": match},
+		{"$unwind": "$locations"},
+		{"$project": bson.M{
+			"date":      "$date",
+			"longitude": "$locations.longitude",
+			"latitude":  "$locations.latitude",
+			"address":   "$locations.address",
+			"timestamp": "$locations.timestamp",
+			"speed":     "$locations.speed",
+		}},
+		{"$sort": bson.M{"date": 1}},
+	}
+
+	dataChan := make(chan model.ActivityLogData)
+	errChan := make(chan error)
+
+	go func() {
+		defer close(dataChan)
+		defer close(errChan)
+		defer closeCollection()
+
+		var data model.ActivityLogData
+		iter := collection.Pipe(pipeline).Batch(1000).AllowDiskUse().Iter()
+		for iter.Next(&data) {
+			dataChan <- data
+		}
+
+		errChan <- iter.Err()
+	}()
+
+	return dataChan, errChan
+}
+
 func (repo *ActivityLogMongoRepository) Save(log model.ActivityLog) error {
 	collection, close := repo.collection()
 	defer close()

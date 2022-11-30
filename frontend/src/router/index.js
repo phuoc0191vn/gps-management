@@ -89,7 +89,20 @@ export const constantRoutes = [
         path: '',
         name: 'Location',
         component: () => import('@/views/location/index'),
-        meta: { title: 'Location', icon: 'car' }
+        meta: { title: 'Location', icon: 'location' }
+      }
+    ]
+  },
+
+  {
+    path: '/report',
+    component: Layout,
+    children: [
+      {
+        path: '',
+        name: 'Report',
+        component: () => import('@/views/report/index'),
+        meta: { title: 'Report', icon: 'report' }
       }
     ]
   },

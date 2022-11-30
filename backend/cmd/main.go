@@ -15,7 +15,8 @@ var (
 	configPrefix string
 	configSource string
 
-	mode string
+	mode      string
+	queueMode bool
 
 	container *Container
 )
@@ -48,8 +49,25 @@ func main() {
 		return
 	}
 
+	go runQueue()
+
 	container.Logger().Infof("Listen and serve GPS-Management API at %s\n", container.Config.Binding)
 	container.Logger().Fatalln(http.ListenAndServe(container.Config.Binding, NewAPIv1(container)))
+}
+
+func runQueue() {
+	if !queueMode {
+		return
+	}
+
+	container.Logger().Infoln("Queue Listening")
+	queues := []func(){
+		GenerateReport,
+	}
+
+	for _, worker := range queues {
+		go worker()
+	}
 }
 
 func init() {
@@ -59,4 +77,5 @@ func init() {
 	flag.StringVar(&configSource, "configSource", ".env", "config source")
 
 	flag.StringVar(&mode, "mode", "server", "Mode: server | cmd")
+	flag.BoolVar(&queueMode, "queue", true, "Enable schedule mode")
 }

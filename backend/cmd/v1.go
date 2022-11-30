@@ -98,10 +98,18 @@ func activityLogRouter(parent *api.Router) {
 	activityLogHandler := api.ActivityLogHandler{
 		DeviceRepository:      container.DeviceRepository,
 		ActivityLogRepository: container.ActivityLogRepository,
+		ReportRepository:      container.ReportRepository,
+		AccountRepository:     container.AccountRepository,
 	}
 
 	router := parent.Group("/activity-log")
 
 	router.GET("/info/:accountID", activityLogHandler.GetInDay)
 	router.GET("/current-location/:accountID", activityLogHandler.CurrentLocation)
+
+	reportRouter := parent.Group("/report")
+	reportRouter.GET("", activityLogHandler.AllReport)
+	reportRouter.GET("/generate/:id", activityLogHandler.GenerateReport)
+	reportRouter.GET("/download/:id", activityLogHandler.Download)
+	reportRouter.GET("/delete/:id", activityLogHandler.Delete)
 }
